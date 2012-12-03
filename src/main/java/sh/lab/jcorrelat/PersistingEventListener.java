@@ -22,8 +22,11 @@ import org.drools.event.rule.ObjectInsertedEvent;
 import org.drools.event.rule.ObjectRetractedEvent;
 import org.drools.event.rule.ObjectUpdatedEvent;
 import org.drools.event.rule.WorkingMemoryEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PersistingEventListener implements WorkingMemoryEventListener {
+    private static final Logger logger = LoggerFactory.getLogger(MessagePersister.class);
 
     private final MessagePersister persister;
     
@@ -48,10 +51,12 @@ public class PersistingEventListener implements WorkingMemoryEventListener {
     }
 
     public void objectRetracted(ObjectRetractedEvent event) {
+        logger.debug("DELETING: {}", event.getOldObject());
+        
         if (!(event.getOldObject() instanceof Message)) {
             return;
         }
-
-//        this.persister.delete((Message) event.getOldObject());
+        
+        this.persister.delete((Message) event.getOldObject());
     }
 }

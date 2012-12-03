@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MessagePersister {
-
     private static final Logger logger = LoggerFactory.getLogger(MessagePersister.class);
+    
     private static final String INDEX = "syslog";
     private static final String TYPE = "event";
     private final Client client;
@@ -66,20 +66,15 @@ public class MessagePersister {
     }
 
     public void index(final Message message) {
-        this.client.prepareIndex()
+        IndexResponse response = this.client.prepareIndex()
                 .setIndex(MessagePersister.INDEX)
                 .setType(MessagePersister.TYPE)
                 .setId(message.getId())
                 .setSource(this.toJson(message))
-                .execute(new ActionListener<IndexResponse>() {
-            public void onResponse(IndexResponse response) {
-                message.setId(response.getId());
-            }
-
-            public void onFailure(Throwable ex) {
-                logger.error(null, ex);
-            }
-        });
+                .execute()
+                .actionGet();
+        
+        message.setId(response.getId());
     }
 
     public void delete(final Message message) {
@@ -87,13 +82,6 @@ public class MessagePersister {
                 .setIndex(MessagePersister.INDEX)
                 .setType(MessagePersister.TYPE)
                 .setId(message.getId())
-                .execute(new ActionListener<DeleteResponse>() {
-            public void onResponse(DeleteResponse response) {
-            }
-
-            public void onFailure(Throwable ex) {
-                logger.error(null, ex);
-            }
-        });
+                .execute().actionGet();
     }
 }

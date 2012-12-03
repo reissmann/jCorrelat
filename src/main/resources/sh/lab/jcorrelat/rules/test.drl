@@ -21,6 +21,8 @@ package sh.lab.jcorrelat.rules;
 import sh.lab.jcorrelat.Message;
 import static sh.lab.jcorrelat.MessageFactory.messageFactory
 
+import java.util.ArrayList;
+
 
 
 declare Message
@@ -29,18 +31,22 @@ declare Message
 end
 
 
+//failed_count : Number( doubleValue >= 10 ) from accumulate(
+//        Message(this before[0,20m] success,
+//                message matches "^Failed password for [^\\s]* from [^\\s]* port [^\\s]* ssh2$"),
+//        count())
+
 
 rule "SSH bruteforce detection"
 when
-    success : Message(message matches "^Accepted password for [^\\s]* from [^\\s]* port [^\\s]* ssh2$")
-    failed_count : Number( doubleValue >= 10 ) from accumulate(
+    success : Message(message matches "Accepted password for [^\\s]* from [^\\s]* port [^\\s]* ssh2")
+    failed : ArrayList( size >= 10 ) from collect(
         Message(this before[0,20m] success,
-                message matches "^Failed password for [^\\s]* from [^\\s]* port [^\\s]* ssh2$"),
-        count())
+                message matches "Failed password for [^\\s]* from [^\\s]* port [^\\s]* ssh2"))
 
 then
     System.out.println("success = " + success);
-    System.out.println("failed_count = " + failed_count);
+    System.out.println("failed = " + failed);
     
     success.setSeverity(Message.Severity.EMERGENCY);
     success.setMessage(success.getMessage() + " [bruteforce]");
@@ -52,6 +58,10 @@ then
         .setSeverity(Message.Severity.EMERGENCY)
         .setFacility(Message.Facility.SECURITY)
         .setProgram(success.getProgram())
-        .setMessage("Successfull bruteforce attack")
+        .setMessage("Successfull bruteforce attack detected")
         .message());
+    
+    for (Object f : failed) {
+        retract(f);
+    }
 end
