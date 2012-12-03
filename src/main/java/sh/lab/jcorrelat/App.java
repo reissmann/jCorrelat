@@ -46,7 +46,7 @@ public class App {
 
         pipeline.addLast("framer", new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
         pipeline.addLast("decoder", new MessageDecoder());
-        pipeline.addLast("handler", new CorrelationChannelHandler());
+        pipeline.addLast("handler", new CorrelationChannelHandler(host));
 
         final Channel channel = bootstrap.bind();
 

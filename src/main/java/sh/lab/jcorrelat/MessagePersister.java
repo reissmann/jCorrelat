@@ -24,6 +24,8 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,9 +50,13 @@ public class MessagePersister {
         this.mapper = new ObjectMapper();
     }
 
-    public MessagePersister() {
+    public MessagePersister(final String host) {
         this(NodeBuilder.nodeBuilder()
                 .client(true)
+                .settings(ImmutableSettings.settingsBuilder()
+                    .put("network.bind_host", host)
+                    .put("network.publish_host", host)
+                    .build())
                 .node()
                 .client());
     }

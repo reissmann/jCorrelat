@@ -42,7 +42,7 @@ public class CorrelationChannelHandler extends SimpleChannelUpstreamHandler {
 
     private final StatefulKnowledgeSession session;
     
-    public CorrelationChannelHandler() {
+    public CorrelationChannelHandler(final String host) {
         final KnowledgeBuilder knowledgeBuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
         knowledgeBuilder.add(ResourceFactory.newClassPathResource("sh/lab/jcorrelat/rules/test.drl"), ResourceType.DRL);
         
@@ -64,7 +64,7 @@ public class CorrelationChannelHandler extends SimpleChannelUpstreamHandler {
         this.session.addEventListener(new DebugAgendaEventListener());
         this.session.addEventListener(new DebugWorkingMemoryEventListener());
         
-        final MessagePersister persister = new MessagePersister();
+        final MessagePersister persister = new MessagePersister(host);
         this.session.addEventListener(new PersistingEventListener(persister));
         
         new Thread(new Runnable() {
