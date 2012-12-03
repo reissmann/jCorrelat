@@ -51,8 +51,6 @@ public class PersistingEventListener implements WorkingMemoryEventListener {
     }
 
     public void objectRetracted(ObjectRetractedEvent event) {
-        logger.debug("DELETING: {}", event.getOldObject());
-        
         if (!(event.getOldObject() instanceof Message)) {
             return;
         }
