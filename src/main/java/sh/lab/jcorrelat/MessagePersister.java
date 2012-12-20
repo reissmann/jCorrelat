@@ -19,6 +19,7 @@
 package sh.lab.jcorrelat;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.delete.DeleteResponse;

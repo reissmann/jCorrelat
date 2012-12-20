@@ -19,10 +19,16 @@
 package sh.lab.jcorrelat;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 public class Message {
 
     public static enum Severity {
+
         EMERGENCY,
         ALERT,
         CRITICAL,
@@ -34,6 +40,7 @@ public class Message {
     }
 
     public static enum Facility {
+
         USER,
         MAIL,
         DAEMON,
@@ -59,22 +66,30 @@ public class Message {
         LOCAL7
     }
     
+    @JsonIgnore()
     private String id;
+    
     private Date time;
     private String host;
     private Facility facility;
     private Severity severity;
     private String program;
     private String message;
+    
+    private Set<String> tags = new HashSet<String>();
+    
+    private Map<String, Object> structures = new HashMap<String, Object>();
 
     public Message() {
     }
 
+    @JsonIgnore()
     public String getId() {
         return this.id;
     }
 
-    public void setId(String id) {
+    @JsonIgnore()
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -82,7 +97,7 @@ public class Message {
         return this.time;
     }
 
-    public void setTime(Date time) {
+    public void setTime(final Date time) {
         this.time = time;
     }
 
@@ -90,7 +105,7 @@ public class Message {
         return this.host;
     }
 
-    public void setHost(String host) {
+    public void setHost(final String host) {
         this.host = host;
     }
 
@@ -98,7 +113,7 @@ public class Message {
         return this.facility;
     }
 
-    public void setFacility(Facility facility) {
+    public void setFacility(final Facility facility) {
         this.facility = facility;
     }
 
@@ -106,7 +121,7 @@ public class Message {
         return this.severity;
     }
 
-    public void setSeverity(Severity severity) {
+    public void setSeverity(final Severity severity) {
         this.severity = severity;
     }
 
@@ -114,7 +129,7 @@ public class Message {
         return this.program;
     }
 
-    public void setProgram(String program) {
+    public void setProgram(final String program) {
         this.program = program;
     }
 
@@ -122,8 +137,48 @@ public class Message {
         return this.message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
+    }
+
+    public Set<String> getTags() {
+        return this.tags;
+    }
+
+    public void setTags(final Set<String> tags) {
+        this.tags = tags;
+    }
+
+    public void addTag(final String tag) {
+        this.tags.add(tag);
+    }
+
+    public void removeTag(final String tag) {
+        this.tags.remove(tag);
+    }
+
+    public boolean hasTag(final String tag) {
+        return this.tags.contains(tag);
+    }
+
+    public Map<String, Object> getStructures() {
+        return this.structures;
+    }
+
+    public void setStructures(final Map<String, Object> structures) {
+        this.structures = structures;
+    }
+
+    public void addStructure(final String key, final Object value) {
+        this.structures.put(key, value);
+    }
+
+    public void removeStructure(final String key) {
+        this.structures.remove(key);
+    }
+
+    public Object getStructure(final String key) {
+        return this.structures.get(key);
     }
 
     @Override
@@ -136,9 +191,11 @@ public class Message {
         s.append("severity=").append(this.severity).append(", ");
         s.append("facility=").append(this.facility).append(", ");
         s.append("program=").append(this.program).append(", ");
-        s.append("message=").append(this.message);
+        s.append("message=").append(this.message).append(", ");
+        s.append("tags=").append(this.tags).append(", ");
+        s.append("structures=").append(this.structures);
         s.append("]");
-        
+
         return s.toString();
     }
 }

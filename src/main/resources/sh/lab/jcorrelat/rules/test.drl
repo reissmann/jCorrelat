@@ -21,7 +21,10 @@ package sh.lab.jcorrelat.rules;
 import sh.lab.jcorrelat.Message;
 import static sh.lab.jcorrelat.MessageFactory.messageFactory
 
-import java.util.ArrayList;
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 
@@ -31,37 +34,85 @@ declare Message
 end
 
 
-//failed_count : Number( doubleValue >= 10 ) from accumulate(
-//        Message(this before[0,20m] success,
-//                message matches "^Failed password for [^\\s]* from [^\\s]* port [^\\s]* ssh2$"),
-//        count())
-
-
-rule "SSH bruteforce detection"
+rule "SSH login success"
+no-loop
 when
-    success : Message(message matches "Accepted password for [^\\s]* from [^\\s]* port [^\\s]* ssh2")
-    failed : ArrayList( size >= 10 ) from collect(
-        Message(this before[0,20m] success,
-                message matches "Failed password for [^\\s]* from [^\\s]* port [^\\s]* ssh2"))
-
+    message : Message( message matches "Accepted password for [^\\s]* from [^\\s]* port [^\\s]* ssh2" )
 then
-    System.out.println("success = " + success);
-    System.out.println("failed = " + failed);
+    Matcher matcher = Pattern.compile("Accepted password for ([^\\s]*) from ([^\\s]*) port ([^\\s]*) ssh2").matcher(message.getMessage());
+
+    if (matcher.find()) {
+        message.addTag("ssh");
+        message.addTag("login success");
+        message.addStructure("user", matcher.group(1));
+        message.addStructure("host", matcher.group(2));
+        message.addStructure("port", Integer.parseInt(matcher.group(3)));
+        
+        update(message);
+    }
+end
+
+
+rule "SSH login failed"
+no-loop
+when
+    message : Message( message matches "Failed password for [^\\s]* from [^\\s]* port [^\\s]* ssh2" )
+then
+    Matcher matcher = Pattern.compile("Failed password for ([^\\s]*) from ([^\\s]*) port ([^\\s]*) ssh2").matcher(message.getMessage());
     
-    success.setSeverity(Message.Severity.EMERGENCY);
-    success.setMessage(success.getMessage() + " [bruteforce]");
-    update(success);
+    if (matcher.find()) {
+        message.addTag("ssh");
+        message.addTag("login failed");
+        message.addStructure("user", matcher.group(1));
+        message.addStructure("host", matcher.group(2));
+        message.addStructure("port", Integer.parseInt(matcher.group(3)));
+        
+        update(message);
+    }
+end
+
+
+rule "SSH bruteforce attempt"
+no-loop
+when
+    failed : CopyOnWriteArrayList( size >= 7 ) from collect(
+        Message( "ssh" memberOf tags, "login failed" memberOf tags ) over window:time( 20m )
+    )
+then
+    System.err.println("failed = " + failed);
+    
+    Message last = (Message) failed.get(failed.size() - 1);
 
     insert(messageFactory()
-        .setTime(success.getTime())
-        .setHost(success.getHost())
+        .setTime(last.getTime())
+        .setHost(last.getHost())
         .setSeverity(Message.Severity.EMERGENCY)
         .setFacility(Message.Facility.SECURITY)
-        .setProgram(success.getProgram())
-        .setMessage("Successfull bruteforce attack detected")
+        .setProgram(last.getProgram())
+        .setMessage(String.format("Bruteforce attack for %s from %s", last.getStructure("user"), last.getStructure("host")))
+        .addTag("ssh")
+        .addTag("bruteforce")
+        .addStructure("user", last.getStructure("user"))
+        .addStructure("host", last.getStructure("host"))
         .message());
     
     for (Object f : failed) {
         retract(f);
     }
+end
+
+
+rule "Successfull SSH bruteforce"
+no-loop
+when
+    success : Message( "ssh" memberOf tags, "login success" memberOf tags )
+    attempt : Message( "ssh" memberOf tags, "bruteforce" memberOf tags )
+then
+    System.err.println("success = " + success);
+    System.err.println("attempt = " + attempt);
+    
+    attempt.setSeverity(Message.Severity.EMERGENCY);
+    attempt.setFacility(Message.Facility.SECURITY);
+    attempt.setMessage(attempt.getMessage() + " [success]");
+    update(attempt);
 end
