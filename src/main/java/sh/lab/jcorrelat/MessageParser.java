@@ -20,29 +20,28 @@
 package sh.lab.jcorrelat;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.jboss.netty.buffer.BigEndianHeapChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MessageDecoder extends OneToOneDecoder {
-    private static final Logger logger = LoggerFactory.getLogger(MessageDecoder.class);
+public class MessageParser extends OneToOneDecoder {
+    private static final Logger logger = LoggerFactory.getLogger(MessageParser.class);
     
     private final ObjectMapper mapper;
 
-    public MessageDecoder() {
+    public MessageParser() {
         this.mapper = new ObjectMapper();
     }
 
     @Override
     protected Object decode(final ChannelHandlerContext context, final Channel channel, final Object object) throws Exception {
-        BigEndianHeapChannelBuffer buffer = (BigEndianHeapChannelBuffer) object;
-        ChannelBufferInputStream stream = new ChannelBufferInputStream(buffer);
+        final String buffer = (String) object;
 
-        Message message = this.mapper.readValue(stream, Message.class);
+        final Message message = this.mapper.readValue(buffer, Message.class);
+        
+//        System.out.println("Received: " + message);
 
         return message;
     }

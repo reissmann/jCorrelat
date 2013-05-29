@@ -184,17 +184,17 @@ public class Message {
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-        s.append("Message");
-        s.append("[");
-        s.append("time=").append(this.time).append(", ");
-        s.append("host=").append(this.host).append(", ");
-        s.append("severity=").append(this.severity).append(", ");
-        s.append("facility=").append(this.facility).append(", ");
-        s.append("program=").append(this.program).append(", ");
-        s.append("message=").append(this.message).append(", ");
+//        s.append("Message");
+//        s.append("[");
+        s/*.append("time=")*/.append(this.time.getTime() / 1000).append(", ");
+//        s.append("host=").append(this.host).append(", ");
+        s/*.append("severity=")*/.append(this.severity).append(", ");
+        s/*.append("facility=")*/.append(this.facility).append(", ");
+//        s.append("program=").append(this.program).append(", ");
+        s/*.append("message=")*/.append("\"").append(this.message).append("\"").append(", ");
         s.append("tags=").append(this.tags).append(", ");
-        s.append("structures=").append(this.structures);
-        s.append("]");
+        s.append("struct=").append(this.structures);
+//        s.append("]");
 
         return s.toString();
     }

@@ -1,5 +1,6 @@
 #! /bin/bash
 
 cat log.json | while read line; do
+  echo $line
   echo $line | socat -u - udp-datagram:localhost:10514
 done

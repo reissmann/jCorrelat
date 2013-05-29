@@ -19,14 +19,10 @@
 package sh.lab.jcorrelat;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +32,9 @@ public class MessagePersister {
     
     private static final String INDEX = "syslog";
     private static final String TYPE = "event";
+    
     private final Client client;
+    
     private final ObjectMapper mapper;
 
     private MessagePersister(final Client client) {
@@ -53,7 +51,7 @@ public class MessagePersister {
 
     public MessagePersister(final String host) {
         this(NodeBuilder.nodeBuilder()
-                .client(true)
+//                .client(true)
                 .settings(ImmutableSettings.settingsBuilder()
                     .put("network.bind_host", host)
                     .put("network.publish_host", host)

@@ -38,14 +38,22 @@ public class PersistingEventListener implements WorkingMemoryEventListener {
         if (!(event.getObject() instanceof Message)) {
             return;
         }
-
-        this.persister.index((Message) event.getObject());
+        
+        final Message message = (Message) event.getObject();
+        
+        System.out.println("I: " + message);
+        
+        this.persister.index(message);
     }
 
     public void objectUpdated(ObjectUpdatedEvent event) {
         if (!(event.getObject() instanceof Message)) {
             return;
         }
+        
+        final Message message = (Message) event.getObject();
+        
+        System.out.println("U: " + message);
 
         this.persister.index((Message) event.getObject());
     }
@@ -55,6 +63,10 @@ public class PersistingEventListener implements WorkingMemoryEventListener {
             return;
         }
         
-        this.persister.delete((Message) event.getOldObject());
+        final Message message = (Message) event.getOldObject();
+        
+        System.out.println("D: " + message);
+        
+        this.persister.delete(message);
     }
 }

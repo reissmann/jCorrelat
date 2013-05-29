@@ -28,12 +28,19 @@ import org.jboss.netty.channel.socket.DatagramChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioDatagramChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
+import org.jboss.netty.handler.codec.string.StringDecoder;
 
 public class App {
 
     public static void main(final String[] args) throws JAXBException {
-        final String host = args[0];
-        final int port = Integer.parseInt(args[1]);
+//        Logger.getRootLogger().setLevel(Level.INFO);
+        
+        final String host = (args.length >= 1)
+                            ? args[0]
+                            : "127.0.0.1";
+        final int port = (args.length >= 1)
+                         ? Integer.parseInt(args[1])
+                         : 10514;
 
         final DatagramChannelFactory factory = new OioDatagramChannelFactory(Executors.newCachedThreadPool());
 
@@ -44,8 +51,9 @@ public class App {
 
         final ChannelPipeline pipeline = bootstrap.getPipeline();
 
+        pipeline.addLast("decoder", new StringDecoder());
         pipeline.addLast("framer", new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
-        pipeline.addLast("decoder", new MessageDecoder());
+        pipeline.addLast("parser", new MessageParser());
         pipeline.addLast("handler", new CorrelationChannelHandler(host));
 
         final Channel channel = bootstrap.bind();

@@ -8,4 +8,4 @@
 {"time": "2012-11-19T00:34:24.089", "host": "box", "facility": 4, "severity": 6, "program": "sshd", "message": "Failed password for root from 10.0.23.4 port 60923 ssh2"}
 {"time": "2012-11-19T00:34:26.089", "host": "box", "facility": 4, "severity": 6, "program": "sshd", "message": "Failed password for root from 10.0.23.4 port 60923 ssh2"}
 {"time": "2012-11-19T00:34:28.089", "host": "box", "facility": 4, "severity": 6, "program": "sshd", "message": "Failed password for root from 10.0.23.4 port 60923 ssh2"}
-{"time": "2012-11-19T00:34:30.089", "host": "utils", "facility": 4, "severity": 6, "program": "sshd", "message": "Accepted password for root from 10.0.23.10 port 56486 ssh2"}
+{"time": "2012-11-19T00:34:30.089", "host": "box", "facility": 4, "severity": 6, "program": "sshd", "message": "Accepted password for root from 10.0.23.4 port 60923 ssh2"}

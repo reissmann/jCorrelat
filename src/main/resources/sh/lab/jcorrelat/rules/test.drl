@@ -75,12 +75,12 @@ end
 rule "SSH bruteforce attempt"
 no-loop
 when
-    failed : CopyOnWriteArrayList( size >= 7 ) from collect(
-        Message( "ssh" memberOf tags, "login failed" memberOf tags ) over window:time( 20m )
+    failed : CopyOnWriteArrayList( size >= 8 ) from collect(
+        Message( "ssh" memberOf tags,
+                 "login failed" memberOf tags
+        ) over window:time( 20m )
     )
 then
-    System.err.println("failed = " + failed);
-    
     Message last = (Message) failed.get(failed.size() - 1);
 
     insert(messageFactory()
@@ -105,14 +105,17 @@ end
 rule "Successfull SSH bruteforce"
 no-loop
 when
-    success : Message( "ssh" memberOf tags, "login success" memberOf tags )
-    attempt : Message( "ssh" memberOf tags, "bruteforce" memberOf tags )
+    attempt : Message( "ssh" memberOf tags,
+                       "bruteforce" memberOf tags,
+                       "success" not memberOf tags )
+    success : Message( "ssh" memberOf tags,
+                       "login success" memberOf tags,
+                       this finishes[ 10m ] attempt )
 then
-    System.err.println("success = " + success);
-    System.err.println("attempt = " + attempt);
-    
+    attempt.addTag("success");
     attempt.setSeverity(Message.Severity.EMERGENCY);
     attempt.setFacility(Message.Facility.SECURITY);
     attempt.setMessage(attempt.getMessage() + " [success]");
+
     update(attempt);
 end
