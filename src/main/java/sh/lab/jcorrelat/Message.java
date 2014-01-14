@@ -28,7 +28,6 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 public class Message {
 
     public static enum Severity {
-
         EMERGENCY,
         ALERT,
         CRITICAL,
@@ -40,7 +39,6 @@ public class Message {
     }
 
     public static enum Facility {
-
         USER,
         MAIL,
         DAEMON,
@@ -76,9 +74,9 @@ public class Message {
     private String program;
     private String message;
     
-    private Set<String> tags = new HashSet<String>();
+    private Map<String, Object> data = new HashMap<String, Object>();
     
-    private Map<String, Object> structures = new HashMap<String, Object>();
+    private Set<String> tags = new HashSet<String>();
 
     public Message() {
     }
@@ -141,6 +139,26 @@ public class Message {
         this.message = message;
     }
 
+    public Map<String, Object> getData() {
+        return this.data;
+    }
+
+    public void setData(final Map<String, Object> structures) {
+        this.data = structures;
+    }
+
+    public void addData(final String key, final Object value) {
+        this.data.put(key, value);
+    }
+
+    public void removeData(final String key) {
+        this.data.remove(key);
+    }
+
+    public Object getData(final String key) {
+        return this.data.get(key);
+    }
+
     public Set<String> getTags() {
         return this.tags;
     }
@@ -161,40 +179,20 @@ public class Message {
         return this.tags.contains(tag);
     }
 
-    public Map<String, Object> getStructures() {
-        return this.structures;
-    }
-
-    public void setStructures(final Map<String, Object> structures) {
-        this.structures = structures;
-    }
-
-    public void addStructure(final String key, final Object value) {
-        this.structures.put(key, value);
-    }
-
-    public void removeStructure(final String key) {
-        this.structures.remove(key);
-    }
-
-    public Object getStructure(final String key) {
-        return this.structures.get(key);
-    }
-
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-//        s.append("Message");
-//        s.append("[");
-        s/*.append("time=")*/.append(this.time.getTime() / 1000).append(", ");
-//        s.append("host=").append(this.host).append(", ");
-        s/*.append("severity=")*/.append(this.severity).append(", ");
-        s/*.append("facility=")*/.append(this.facility).append(", ");
-//        s.append("program=").append(this.program).append(", ");
-        s/*.append("message=")*/.append("\"").append(this.message).append("\"").append(", ");
-        s.append("tags=").append(this.tags).append(", ");
-        s.append("struct=").append(this.structures);
-//        s.append("]");
+        s.append("Message");
+        s.append("[");
+        s.append("time=").append(this.time.getTime() / 1000).append(", ");
+        s.append("host=").append(this.host).append(", ");
+        s.append("severity=").append(this.severity).append(", ");
+        s.append("facility=").append(this.facility).append(", ");
+        s.append("program=").append(this.program).append(", ");
+        s.append("message=").append("\"").append(this.message).append("\"").append(", ");
+        s.append("data=").append(this.data).append(", ");
+        s.append("tags=").append(this.tags);
+        s.append("]");
 
         return s.toString();
     }

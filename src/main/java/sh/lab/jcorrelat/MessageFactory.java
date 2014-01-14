@@ -76,14 +76,14 @@ public class MessageFactory {
         return this;
     }
     
-    public MessageFactory addTag(final String tag) {
-        this.message.addTag(tag);
+    public MessageFactory addData(final String key, final Object value) {
+        this.message.addData(key, value);
         
         return this;
     }
     
-    public MessageFactory addStructure(final String key, final Object value) {
-        this.message.addStructure(key, value);
+    public MessageFactory addTag(final String tag) {
+        this.message.addTag(tag);
         
         return this;
     }
