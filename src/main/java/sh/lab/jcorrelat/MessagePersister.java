@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MessagePersister {
-    private static final Logger logger = LoggerFactory.getLogger(MessagePersister.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MessagePersister.class);
     
     private static final String INDEX = "syslog";
     private static final String TYPE = "event";
@@ -49,12 +49,12 @@ public class MessagePersister {
         this.mapper = new ObjectMapper();
     }
 
-    public MessagePersister(final String host) {
+    public MessagePersister() {
         this(NodeBuilder.nodeBuilder()
-//                .client(true)
+                .client(App.CONF_ES_CLIENT)
                 .settings(ImmutableSettings.settingsBuilder()
-                    .put("network.bind_host", host)
-                    .put("network.publish_host", host)
+                    .put("network.bind_host", App.CONF_ES_BIND)
+                    .put("network.publish_host", App.CONF_ES_BIND)
                     .build())
                 .node()
                 .client());
@@ -65,7 +65,7 @@ public class MessagePersister {
             return this.mapper.writeValueAsString(message);
             
         } catch (IOException ex) {
-            logger.error(null, ex);
+            LOG.error(null, ex);
             return null;
         }
     }
@@ -80,6 +80,8 @@ public class MessagePersister {
                 .actionGet();
         
         message.setId(response.getId());
+        
+        LOG.debug("Indexed message: {}", message);
     }
 
     public void delete(final Message message) {
@@ -88,5 +90,7 @@ public class MessagePersister {
                 .setType(MessagePersister.TYPE)
                 .setId(message.getId())
                 .execute().actionGet();
+        
+        LOG.debug("Deleted message: {}", message);
     }
 }

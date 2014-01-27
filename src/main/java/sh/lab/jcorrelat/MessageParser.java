@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MessageParser extends OneToOneDecoder {
-    private static final Logger logger = LoggerFactory.getLogger(MessageParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MessageParser.class);
     
     private final ObjectMapper mapper;
 
@@ -38,10 +38,12 @@ public class MessageParser extends OneToOneDecoder {
     @Override
     protected Object decode(final ChannelHandlerContext context, final Channel channel, final Object object) throws Exception {
         final String buffer = (String) object;
+        
+        LOG.debug("Received line: {}", buffer);
 
         final Message message = this.mapper.readValue(buffer, Message.class);
         
-//        System.out.println("Received: " + message);
+        LOG.debug("Received message: {}", message);
 
         return message;
     }

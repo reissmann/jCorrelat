@@ -18,43 +18,55 @@
  */
 package sh.lab.jcorrelat;
 
+import ch.qos.logback.classic.Level;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import javax.xml.bind.JAXBException;
 import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
+import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ServerChannelFactory;
 import org.jboss.netty.channel.socket.DatagramChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioDatagramChannelFactory;
+import org.jboss.netty.channel.socket.oio.OioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
 import org.jboss.netty.handler.codec.string.StringDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class App {
+    
+    public static final String CONF_BIND_HOST = "127.0.0.1";
+    public static final int CONF_BIND_PORT = 10514;
+    
+    public static final boolean CONF_ES_CLIENT = false;
+    public static final String CONF_ES_BIND = "127.0.0.1";
+    
+    public static final Level CONF_LOG_LEVEL = Level.WARN;
 
     public static void main(final String[] args) throws JAXBException {
-//        Logger.getRootLogger().setLevel(Level.INFO);
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)).setLevel(CONF_LOG_LEVEL);
+
+//        final DatagramChannelFactory factory = new OioDatagramChannelFactory();
+        final ServerChannelFactory factory = new OioServerSocketChannelFactory();
+
+        final ServerBootstrap bootstrap = new ServerBootstrap(factory);
+//        final ConnectionlessBootstrap bootstrap = new ConnectionlessBootstrap(factory);
+        bootstrap.setOption("localAddress",
+                            new InetSocketAddress(CONF_BIND_HOST,
+                                                  CONF_BIND_PORT));
         
-        final String host = (args.length >= 1)
-                            ? args[0]
-                            : "127.0.0.1";
-        final int port = (args.length >= 1)
-                         ? Integer.parseInt(args[1])
-                         : 10514;
-
-        final DatagramChannelFactory factory = new OioDatagramChannelFactory(Executors.newCachedThreadPool());
-
-        final ConnectionlessBootstrap bootstrap = new ConnectionlessBootstrap(factory);
-        bootstrap.setOption("localAddress", new InetSocketAddress(host, port));
         bootstrap.setOption("reuseAddress", true);
         bootstrap.setOption("child.tcpNoDelay", true);
 
         final ChannelPipeline pipeline = bootstrap.getPipeline();
 
-        pipeline.addLast("decoder", new StringDecoder());
         pipeline.addLast("framer", new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
+        pipeline.addLast("decoder", new StringDecoder());
         pipeline.addLast("parser", new MessageParser());
-        pipeline.addLast("handler", new CorrelationChannelHandler(host));
+        pipeline.addLast("handler", new CorrelationChannelHandler());
 
         final Channel channel = bootstrap.bind();
 

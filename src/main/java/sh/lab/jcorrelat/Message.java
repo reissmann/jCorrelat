@@ -81,16 +81,14 @@ public class Message {
     public Message() {
     }
 
-    @JsonIgnore()
     public String getId() {
         return this.id;
     }
 
-    @JsonIgnore()
     public void setId(final String id) {
         this.id = id;
     }
-
+    
     public Date getTime() {
         return this.time;
     }
@@ -122,7 +120,7 @@ public class Message {
     public void setSeverity(final Severity severity) {
         this.severity = severity;
     }
-
+    
     public String getProgram() {
         return this.program;
     }
@@ -142,7 +140,7 @@ public class Message {
     public Map<String, Object> getData() {
         return this.data;
     }
-
+    
     public void setData(final Map<String, Object> structures) {
         this.data = structures;
     }

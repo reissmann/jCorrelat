@@ -18,7 +18,10 @@
  */
 package sh.lab.jcorrelat;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import sh.lab.jcorrelat.Message.Facility;
 import sh.lab.jcorrelat.Message.Severity;
 
@@ -26,12 +29,23 @@ public class MessageFactory {
     
     private final Message message;
     
-    private MessageFactory() {
+    private MessageFactory(final Message template) {
         this.message = new Message();
+        
+        this.message.setTime(Calendar.getInstance().getTime());
+        
+        this.message.setHost(template.getHost());
+        this.message.setFacility(template.getFacility());
+        this.message.setSeverity(template.getSeverity());
+        this.message.setProgram(template.getProgram());
+        this.message.setMessage(template.getMessage());
+        
+        this.message.setData(new HashMap<String, Object>(template.getData()));
+        this.message.setTags(new HashSet<String>(template.getTags()));
     }
     
-    public static MessageFactory messageFactory() {
-        return new MessageFactory();
+    public static MessageFactory messageFactory(final Message template) {
+        return new MessageFactory(template);
     }
 
     public MessageFactory setId(final String id) {
@@ -64,12 +78,6 @@ public class MessageFactory {
         return this;
     }
 
-    public MessageFactory setProgram(final String program) {
-        message.setProgram(program);
-        
-        return this;
-    }
-
     public MessageFactory setMessage(final String message) {
         this.message.setMessage(message);
         
@@ -82,8 +90,20 @@ public class MessageFactory {
         return this;
     }
     
+    public MessageFactory removeData(final String key) {
+        this.message.removeData(key);
+        
+        return this;
+    }
+    
     public MessageFactory addTag(final String tag) {
         this.message.addTag(tag);
+        
+        return this;
+    }
+    
+    public MessageFactory removeTag(final String tag) {
+        this.message.removeTag(tag);
         
         return this;
     }

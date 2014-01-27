@@ -25,6 +25,8 @@ import org.drools.builder.KnowledgeBuilder;
 import org.drools.builder.KnowledgeBuilderFactory;
 import org.drools.builder.ResourceType;
 import org.drools.conf.EventProcessingOption;
+import org.drools.event.rule.DebugAgendaEventListener;
+import org.drools.event.rule.DebugWorkingMemoryEventListener;
 import org.drools.io.ResourceFactory;
 import org.drools.runtime.KnowledgeSessionConfiguration;
 import org.drools.runtime.StatefulKnowledgeSession;
@@ -36,11 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CorrelationChannelHandler extends SimpleChannelUpstreamHandler {
-    private static final Logger logger = LoggerFactory.getLogger(CorrelationChannelHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CorrelationChannelHandler.class);
     
     private final StatefulKnowledgeSession session;
     
-    public CorrelationChannelHandler(final String host) {
+    public CorrelationChannelHandler() {
         final KnowledgeBuilder knowledgeBuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
         knowledgeBuilder.add(ResourceFactory.newClassPathResource("sh/lab/jcorrelat/rules/test.drl"), ResourceType.DRL);
 
@@ -55,21 +57,23 @@ public class CorrelationChannelHandler extends SimpleChannelUpstreamHandler {
         knowledgeBase.addKnowledgePackages(knowledgeBuilder.getKnowledgePackages());
 
         KnowledgeSessionConfiguration knowledgeSessionConfiguration = KnowledgeBaseFactory.newKnowledgeSessionConfiguration();
-//        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("pseudo"));
-        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("realtime"));
+        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("pseudo"));
+//        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("realtime"));
 
         this.session = knowledgeBase.newStatefulKnowledgeSession(knowledgeSessionConfiguration, null);
 
 //        this.session.addEventListener(new DebugAgendaEventListener());
 //        this.session.addEventListener(new DebugWorkingMemoryEventListener());
 
-        final MessagePersister persister = new MessagePersister(host);
+        final MessagePersister persister = new MessagePersister();
         this.session.addEventListener(new PersistingEventListener(persister));
     }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        Message message = (Message) e.getMessage();
+        final Message message = (Message) e.getMessage();
+        
+        LOG.debug("Correlating message: {}", message);
 
         this.session.insert(message);
         this.session.fireAllRules();

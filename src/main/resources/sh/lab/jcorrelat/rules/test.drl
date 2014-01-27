@@ -34,88 +34,62 @@ declare Message
 end
 
 
-rule "SSH login success"
-no-loop
-when
-    message : Message( message matches "Accepted password for [^\\s]* from [^\\s]* port [^\\s]* ssh2" )
-then
-    Matcher matcher = Pattern.compile("Accepted password for ([^\\s]*) from ([^\\s]*) port ([^\\s]*) ssh2").matcher(message.getMessage());
-
-    if (matcher.find()) {
-        message.addTag("ssh");
-        message.addTag("login success");
-        message.addStructure("user", matcher.group(1));
-        message.addStructure("host", matcher.group(2));
-        message.addStructure("port", Integer.parseInt(matcher.group(3)));
-        
-        update(message);
-    }
-end
-
-
-rule "SSH login failed"
-no-loop
-when
-    message : Message( message matches "Failed password for [^\\s]* from [^\\s]* port [^\\s]* ssh2" )
-then
-    Matcher matcher = Pattern.compile("Failed password for ([^\\s]*) from ([^\\s]*) port ([^\\s]*) ssh2").matcher(message.getMessage());
-    
-    if (matcher.find()) {
-        message.addTag("ssh");
-        message.addTag("login failed");
-        message.addStructure("user", matcher.group(1));
-        message.addStructure("host", matcher.group(2));
-        message.addStructure("port", Integer.parseInt(matcher.group(3)));
-        
-        update(message);
-    }
-end
-
 
 rule "SSH bruteforce attempt"
 no-loop
 when
-    failed : CopyOnWriteArrayList( size >= 8 ) from collect(
-        Message( "ssh" memberOf tags,
-                 "login failed" memberOf tags
-        ) over window:time( 20m )
+    Message (
+        $host: host,
+        $user: data["user"]
+    )
+    $attempts : CopyOnWriteArrayList(
+        size >= 20
+    ) from collect(
+        Message(
+            tags contains "SSHFAIL",
+            host == $host,
+            data["user"] == $user
+        ) over window:time( 20s )
     )
 then
-    Message last = (Message) failed.get(failed.size() - 1);
-
-    insert(messageFactory()
+    Message last = (Message) $attempts.get($attempts.size() - 1);
+    
+    Message msg = messageFactory(last)
         .setTime(last.getTime())
-        .setHost(last.getHost())
         .setSeverity(Message.Severity.EMERGENCY)
         .setFacility(Message.Facility.SECURITY)
-        .setProgram(last.getProgram())
-        .setMessage(String.format("Bruteforce attack for %s from %s", last.getStructure("user"), last.getStructure("host")))
-        .addTag("ssh")
-        .addTag("bruteforce")
-        .addStructure("user", last.getStructure("user"))
-        .addStructure("host", last.getStructure("host"))
-        .message());
+        .setMessage(String.format("Bruteforce attack for %s from %s", last.getData("user"), last.getData("ip")))
+        .addTag("BRUTEFORCE")
+        .message();
     
-    for (Object f : failed) {
+    for (Object f : $attempts) {
         retract(f);
     }
+    
+    insert(msg);
 end
-
 
 rule "Successfull SSH bruteforce"
 no-loop
 when
-    attempt : Message( "ssh" memberOf tags,
-                       "bruteforce" memberOf tags,
-                       "success" not memberOf tags )
-    success : Message( "ssh" memberOf tags,
-                       "login success" memberOf tags,
-                       this finishes[ 10m ] attempt )
+    $attempt : Message(
+        tags contains "SSHFAIL",
+        tags contains "BRUTEFORCE",
+        $host: host,
+        $user: data["user"]
+    )
+    $success : Message(
+        host == $host,
+        data["user"] == $user,
+        tags contains "SSHSUCCESS",
+        this finishes[ 10s ] $attempt
+    )
 then
-    attempt.addTag("success");
-    attempt.setSeverity(Message.Severity.EMERGENCY);
-    attempt.setFacility(Message.Facility.SECURITY);
-    attempt.setMessage(attempt.getMessage() + " [success]");
+    $attempt.addTag("BRUTEFORCE");
+    $attempt.addTag("INCIDENT");
+    $attempt.setSeverity(Message.Severity.EMERGENCY);
+    $attempt.setFacility(Message.Facility.SECURITY);
+    $attempt.setMessage($attempt.getMessage() + " (successful bruteforce attac)");
 
-    update(attempt);
+    update($attempt);
 end
