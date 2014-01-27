@@ -58,7 +58,7 @@ then
         .setTime(last.getTime())
         .setSeverity(Message.Severity.EMERGENCY)
         .setFacility(Message.Facility.SECURITY)
-        .setMessage(String.format("Bruteforce attack for %s from %s", last.getData("user"), last.getData("ip")))
+        .setMessage("Bruteforce attack for @{data.user} from @{data.ip}")
         .addTag("BRUTEFORCE")
         .message();
     

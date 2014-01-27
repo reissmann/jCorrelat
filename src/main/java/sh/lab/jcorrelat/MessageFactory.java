@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import org.mvel2.templates.TemplateRuntime;
 import sh.lab.jcorrelat.Message.Facility;
 import sh.lab.jcorrelat.Message.Severity;
 
@@ -78,8 +79,18 @@ public class MessageFactory {
         return this;
     }
 
-    public MessageFactory setMessage(final String message) {
-        this.message.setMessage(message);
+//    public MessageFactory setMessage(final String message) {
+//        this.message.setMessage(message);
+//        
+//        return this;
+//    }
+//
+//    public MessageFactory setMessage(final String pattern, final Object... args) {
+//        return this.setMessage(String.format(pattern, args));
+//    }
+    
+    public MessageFactory setMessage(final String pattern) {
+        this.message.setMessage(TemplateRuntime.eval(pattern, this.message).toString());
         
         return this;
     }
