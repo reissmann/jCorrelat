@@ -78,16 +78,6 @@ public class MessageFactory {
         
         return this;
     }
-
-//    public MessageFactory setMessage(final String message) {
-//        this.message.setMessage(message);
-//        
-//        return this;
-//    }
-//
-//    public MessageFactory setMessage(final String pattern, final Object... args) {
-//        return this.setMessage(String.format(pattern, args));
-//    }
     
     public MessageFactory setMessage(final String pattern) {
         this.message.setMessage(TemplateRuntime.eval(pattern, this.message).toString());
