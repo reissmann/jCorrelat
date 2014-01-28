@@ -23,8 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import org.mvel2.templates.TemplateRuntime;
-import sh.lab.jcorrelat.Facility;
-import sh.lab.jcorrelat.Severity;
 
 public class MessageFactory {
     
