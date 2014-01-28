@@ -57,8 +57,8 @@ public class CorrelationChannelHandler extends SimpleChannelUpstreamHandler {
         knowledgeBase.addKnowledgePackages(knowledgeBuilder.getKnowledgePackages());
 
         KnowledgeSessionConfiguration knowledgeSessionConfiguration = KnowledgeBaseFactory.newKnowledgeSessionConfiguration();
-        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("pseudo"));
-//        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("realtime"));
+//        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("pseudo"));
+        knowledgeSessionConfiguration.setOption(ClockTypeOption.get("realtime"));
 
         this.session = knowledgeBase.newStatefulKnowledgeSession(knowledgeSessionConfiguration, null);
 
