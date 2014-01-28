@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PersistingEventListener implements WorkingMemoryEventListener {
-    private static final Logger logger = LoggerFactory.getLogger(MessagePersister.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MessagePersister.class);
 
     private final MessagePersister persister;
     
@@ -41,7 +41,7 @@ public class PersistingEventListener implements WorkingMemoryEventListener {
         
         final Message message = (Message) event.getObject();
         
-        System.out.println("I: " + message);
+        LOG.debug("I: {}", message);
         
         this.persister.index(message);
     }
@@ -53,7 +53,7 @@ public class PersistingEventListener implements WorkingMemoryEventListener {
         
         final Message message = (Message) event.getObject();
         
-        System.out.println("U: " + message);
+        LOG.debug("U: {}", message);
 
         this.persister.index((Message) event.getObject());
     }
@@ -65,7 +65,7 @@ public class PersistingEventListener implements WorkingMemoryEventListener {
         
         final Message message = (Message) event.getOldObject();
         
-        System.out.println("D: " + message);
+        LOG.debug("D: {}", message);
         
         this.persister.delete(message);
     }
