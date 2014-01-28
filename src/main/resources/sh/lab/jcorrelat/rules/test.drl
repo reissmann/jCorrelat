@@ -56,7 +56,7 @@ then
     
     Message msg = messageFactory(last)
         .setTime(last.getTime())
-        .setSeverity(Message.Severity.EMERGENCY)
+        .setSeverity(Message.Severity.EMERG)
         .setFacility(Message.Facility.SECURITY)
         .setMessage("Bruteforce attack for @{data.user} from @{data.ip}")
         .addTag("BRUTEFORCE")
@@ -87,7 +87,7 @@ when
 then
     $attempt.addTag("BRUTEFORCE");
     $attempt.addTag("INCIDENT");
-    $attempt.setSeverity(Message.Severity.EMERGENCY);
+    $attempt.setSeverity(Message.Severity.EMERG);
     $attempt.setFacility(Message.Facility.SECURITY);
     $attempt.setMessage($attempt.getMessage() + " (successful bruteforce attac)");
 
