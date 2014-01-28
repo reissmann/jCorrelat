@@ -19,6 +19,8 @@
 package sh.lab.jcorrelat.rules;
 
 import sh.lab.jcorrelat.Message;
+import sh.lab.jcorrelat.Severity;
+import sh.lab.jcorrelat.Facility;
 import static sh.lab.jcorrelat.MessageFactory.messageFactory
 
 import java.util.regex.Matcher
@@ -56,8 +58,8 @@ then
     
     Message msg = messageFactory(last)
         .setTime(last.getTime())
-        .setSeverity(Message.Severity.EMERG)
-        .setFacility(Message.Facility.SECURITY)
+        .setSeverity(Severity.EMERG)
+        .setFacility(Facility.SECURITY)
         .setMessage("Bruteforce attack for @{data.user} from @{data.ip}")
         .addTag("BRUTEFORCE")
         .message();
@@ -87,8 +89,8 @@ when
 then
     $attempt.addTag("BRUTEFORCE");
     $attempt.addTag("INCIDENT");
-    $attempt.setSeverity(Message.Severity.EMERG);
-    $attempt.setFacility(Message.Facility.SECURITY);
+    $attempt.setSeverity(Severity.EMERG);
+    $attempt.setFacility(Facility.SECURITY);
     $attempt.setMessage($attempt.getMessage() + " (successful bruteforce attac)");
 
     update($attempt);

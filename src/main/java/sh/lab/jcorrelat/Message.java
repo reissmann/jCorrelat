@@ -18,52 +18,14 @@
  */
 package sh.lab.jcorrelat;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonIgnore;
 
 public class Message {
-
-    public static enum Severity {
-        EMERG,
-        ALERT,
-        CRIT,
-        ERROR,
-        WARNING,
-        NOTICE,
-        INFO,
-        DEBUG
-    }
-
-    public static enum Facility {
-        KERN,
-  	USER,
-  	MAIL,
-  	DAEMON,
-  	AUTH,
-  	SYSLOG,
-  	LPR,
-  	NEWS,
-  	UUCP,
-  	CRON,
-   	SECURITY,
-   	FTP,
-   	NTP,
-   	LOGAUDIT,
-   	LOGALERT,
-   	CLOCK,
-   	LOCAL0,
-   	LOCAL1,
-   	LOCAL2,
-   	LOCAL3,
-   	LOCAL4,
-   	LOCAL5,
-   	LOCAL6,
-    }
     
     @JsonIgnore()
     private String id;
@@ -194,15 +156,5 @@ public class Message {
         s.append("]");
 
         return s.toString();
-    }
-    
-    @JsonCreator
-    public static Facility parseFacility(String value) {
-        return Facility.valueOf(value.toUpperCase());
-    }
-    
-    @JsonCreator
-    public static Severity parseSeverity(String value) {
-        return Severity.valueOf(value.toUpperCase());
     }
 }

@@ -18,8 +18,8 @@
  */
 package sh.lab.jcorrelat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
