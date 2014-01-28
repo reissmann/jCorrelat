@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 public class Message {
@@ -193,5 +194,15 @@ public class Message {
         s.append("]");
 
         return s.toString();
+    }
+    
+    @JsonCreator
+    public static Facility parseFacility(String value) {
+        return Facility.valueOf(value.toUpperCase());
+    }
+    
+    @JsonCreator
+    public static Severity parseSeverity(String value) {
+        return Severity.valueOf(value.toUpperCase());
     }
 }
