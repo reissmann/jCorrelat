@@ -37,6 +37,18 @@ end
 
 
 
+/*
+rule "xxx"
+no-loop
+when
+    $m: Message ()
+then
+    System.err.println($m);
+end
+*/
+
+
+
 rule "SSH bruteforce attempt"
 no-loop
 when
@@ -67,6 +79,8 @@ then
     for (Object f : $attempts) {
         retract(f);
     }
+
+    System.err.println(msg);
     
     insert(msg);
 end
@@ -92,6 +106,8 @@ then
     $attempt.setSeverity(Severity.EMERG);
     $attempt.setFacility(Facility.SECURITY);
     $attempt.setMessage($attempt.getMessage() + " (successful bruteforce attac)");
+    
+    System.err.println($attempt);
 
     update($attempt);
 end

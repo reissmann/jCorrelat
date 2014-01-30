@@ -47,12 +47,6 @@ public class MessageFactory {
         return new MessageFactory(template);
     }
 
-    public MessageFactory setId(final String id) {
-        message.setId(id);
-        
-        return this;
-    }
-
     public MessageFactory setTime(final Date time) {
         message.setTime(time);
         

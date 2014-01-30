@@ -20,31 +20,37 @@
 package sh.lab.jcorrelat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MessageParser extends OneToOneDecoder {
-    private static final Logger LOG = LoggerFactory.getLogger(MessageParser.class);
+public class MessageDecoder extends ByteToMessageDecoder {
+    private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
+    
+    public static final int BUFFER_SIZE = 8192;
+    
+    private final byte[] buffer = new byte[BUFFER_SIZE];
     
     private final ObjectMapper mapper;
 
-    public MessageParser() {
+    public MessageDecoder() {
         this.mapper = new ObjectMapper();
     }
 
     @Override
-    protected Object decode(final ChannelHandlerContext context, final Channel channel, final Object object) throws Exception {
-        final String buffer = (String) object;
+    protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out) throws Exception {
+        in.readBytes(this.buffer, 0, in.readableBytes());
+        in.clear();
         
-        LOG.debug("Received line: {}", buffer);
-
-        final Message message = this.mapper.readValue(buffer, Message.class);
+        LOG.trace("Received line: {}", this.buffer);
         
-        LOG.debug("Received message: {}", message);
-
-        return message;
+        final Message message = this.mapper.readValue(this.buffer, Message.class);
+        
+        LOG.trace("Received message: {}", message);
+        
+        out.add(message);
     }
 }

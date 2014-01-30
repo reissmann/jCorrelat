@@ -24,11 +24,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class Message {
     
     @JsonIgnore()
-    private String id;
+    private final String id;
     
     private Date time;
     private String host;
@@ -42,14 +43,11 @@ public class Message {
     private Set<String> tags = new HashSet<String>();
 
     public Message() {
+        this.id = UUID.randomUUID().toString();
     }
 
     public String getId() {
         return this.id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
     }
     
     public Date getTime() {
@@ -57,7 +55,8 @@ public class Message {
     }
 
     public void setTime(final Date time) {
-        this.time = time;
+//        this.time = time;
+        this.time = new Date();
     }
 
     public String getHost() {

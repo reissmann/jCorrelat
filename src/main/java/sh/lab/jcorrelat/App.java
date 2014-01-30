@@ -19,20 +19,27 @@
 package sh.lab.jcorrelat;
 
 import ch.qos.logback.classic.Level;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import javax.xml.bind.JAXBException;
-import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ServerChannelFactory;
-import org.jboss.netty.channel.socket.DatagramChannelFactory;
-import org.jboss.netty.channel.socket.oio.OioDatagramChannelFactory;
-import org.jboss.netty.channel.socket.oio.OioServerSocketChannelFactory;
-import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
-import org.jboss.netty.handler.codec.frame.Delimiters;
-import org.jboss.netty.handler.codec.string.StringDecoder;
+import org.elasticsearch.common.netty.channel.DefaultChannelPipeline;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,36 +51,46 @@ public class App {
     public static final boolean CONF_ES_CLIENT = false;
     public static final String CONF_ES_BIND = "127.0.0.1";
     
-    public static final Level CONF_LOG_LEVEL = Level.WARN;
+    public static final Level CONF_LOG_LEVEL = Level.INFO;
 
-    public static void main(final String[] args) throws JAXBException {
+    public static void main(final String[] args) throws Exception {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)).setLevel(CONF_LOG_LEVEL);
-
-//        final DatagramChannelFactory factory = new OioDatagramChannelFactory();
-        final ServerChannelFactory factory = new OioServerSocketChannelFactory();
-
-        final ServerBootstrap bootstrap = new ServerBootstrap(factory);
-//        final ConnectionlessBootstrap bootstrap = new ConnectionlessBootstrap(factory);
-        bootstrap.setOption("localAddress",
-                            new InetSocketAddress(CONF_BIND_HOST,
-                                                  CONF_BIND_PORT));
         
-        bootstrap.setOption("reuseAddress", true);
-        bootstrap.setOption("child.tcpNoDelay", true);
+        final EventLoopGroup bossGroup = new NioEventLoopGroup();
+        final EventLoopGroup workerGroup = new NioEventLoopGroup();
+        
+        final MessagePersister persister = new MessagePersister();
+        
+        final EventExecutorGroup correlatorGroup = new DefaultEventExecutorGroup(32);
+        final MessageCorrelationHandler correlatorHandler = new MessageCorrelationHandler(persister);
+        
+        try {
+            final ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup)
+             .channel(NioServerSocketChannel.class)
+             .childHandler(new ChannelInitializer<SocketChannel>() {
+                 @Override
+                 public void initChannel(final SocketChannel channel) throws Exception {
+                     final ChannelPipeline pipeline = channel.pipeline();
+                     
+                     pipeline.addLast("framer", new LineBasedFrameDecoder(MessageDecoder.BUFFER_SIZE));
+                     pipeline.addLast("decoder", new MessageDecoder());
+                     
+                     pipeline.addLast(/*correlatorGroup,*/ "correlator", correlatorHandler);
+                 }
+             })
+             .option(ChannelOption.SO_REUSEADDR, true)
+             .option(ChannelOption.SO_BACKLOG, 8)
+             .option(ChannelOption.TCP_NODELAY, true)
+             .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-        final ChannelPipeline pipeline = bootstrap.getPipeline();
+            final Channel channel = bootstrap.bind(CONF_BIND_HOST, CONF_BIND_PORT).sync().channel();
 
-        pipeline.addLast("framer", new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
-        pipeline.addLast("decoder", new StringDecoder());
-        pipeline.addLast("parser", new MessageParser());
-        pipeline.addLast("handler", new CorrelationChannelHandler());
-
-        final Channel channel = bootstrap.bind();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
-            public void run() {
-                channel.close();
-            }
-        }));
+            channel.closeFuture().sync();
+            
+        } finally {
+            workerGroup.shutdownGracefully();
+            bossGroup.shutdownGracefully();
+        }
     }
 }

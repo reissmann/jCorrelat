@@ -18,8 +18,12 @@
  */
 package sh.lab.jcorrelat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -28,17 +32,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MessagePersister {
+
     private static final Logger LOG = LoggerFactory.getLogger(MessagePersister.class);
-    
+
     private static final String INDEX = "syslog";
     private static final String TYPE = "event";
-    
+
     private final Client client;
-    
+
     private final ObjectMapper mapper;
+
+    private BulkRequestBuilder bulkRequestBuilder = null;
 
     private MessagePersister(final Client client) {
         this.client = client;
+
+        this.bulkRequestBuilder = this.client.prepareBulk();
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             public void run() {
@@ -53,44 +62,52 @@ public class MessagePersister {
         this(NodeBuilder.nodeBuilder()
                 .client(App.CONF_ES_CLIENT)
                 .settings(ImmutableSettings.settingsBuilder()
-                    .put("network.bind_host", App.CONF_ES_BIND)
-                    .put("network.publish_host", App.CONF_ES_BIND)
-                    .build())
+                        .put("network.bind_host", App.CONF_ES_BIND)
+                        .put("network.publish_host", App.CONF_ES_BIND)
+                        .build())
                 .node()
                 .client());
     }
 
-    private String toJson(final Message message) {
-        try {
-            return this.mapper.writeValueAsString(message);
-            
-        } catch (IOException ex) {
-            LOG.error(null, ex);
-            return null;
-        }
-    }
-
     public void index(final Message message) {
-        IndexResponse response = this.client.prepareIndex()
+        final byte[] source;
+        try {
+            source = this.mapper.writeValueAsBytes(message);
+
+        } catch (final JsonProcessingException ex) {
+            LOG.error(null, ex);
+            return;
+        }
+        
+        this.bulkRequestBuilder.add(this.client.prepareIndex()
                 .setIndex(MessagePersister.INDEX)
                 .setType(MessagePersister.TYPE)
                 .setId(message.getId())
-                .setSource(this.toJson(message))
-                .execute()
-                .actionGet();
+                .setSource(source, 0, source.length, true));
         
-        message.setId(response.getId());
-        
-        LOG.debug("Indexed message: {}", message);
+        if (this.bulkRequestBuilder.numberOfActions() > 64) this.execute();
     }
 
     public void delete(final Message message) {
-        this.client.prepareDelete()
+        this.bulkRequestBuilder.add(this.client.prepareDelete()
                 .setIndex(MessagePersister.INDEX)
                 .setType(MessagePersister.TYPE)
-                .setId(message.getId())
-                .execute().actionGet();
+                .setId(message.getId()));
         
-        LOG.debug("Deleted message: {}", message);
+        if (this.bulkRequestBuilder.numberOfActions() > 64) this.execute();
+    }
+
+    private void execute() {
+        this.bulkRequestBuilder.execute(new ActionListener<BulkResponse>() {
+            public void onResponse(final BulkResponse response) {
+                LOG.trace("Executed elasticsearch build request: {} ms", response.getTookInMillis());
+            }
+
+            public void onFailure(final Throwable e) {
+                LOG.error(null, e);
+            }
+        });
+        
+        this.bulkRequestBuilder = this.client.prepareBulk();
     }
 }

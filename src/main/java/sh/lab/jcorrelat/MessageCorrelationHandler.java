@@ -18,6 +18,13 @@
  */
 package sh.lab.jcorrelat;
 
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.drools.KnowledgeBase;
 import org.drools.KnowledgeBaseConfiguration;
 import org.drools.KnowledgeBaseFactory;
@@ -25,24 +32,31 @@ import org.drools.builder.KnowledgeBuilder;
 import org.drools.builder.KnowledgeBuilderFactory;
 import org.drools.builder.ResourceType;
 import org.drools.conf.EventProcessingOption;
-import org.drools.event.rule.DebugAgendaEventListener;
-import org.drools.event.rule.DebugWorkingMemoryEventListener;
+import org.drools.event.rule.ObjectInsertedEvent;
+import org.drools.event.rule.ObjectRetractedEvent;
+import org.drools.event.rule.ObjectUpdatedEvent;
+import org.drools.event.rule.WorkingMemoryEventListener;
 import org.drools.io.ResourceFactory;
 import org.drools.runtime.KnowledgeSessionConfiguration;
 import org.drools.runtime.StatefulKnowledgeSession;
 import org.drools.runtime.conf.ClockTypeOption;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CorrelationChannelHandler extends SimpleChannelUpstreamHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(CorrelationChannelHandler.class);
-    
+@ChannelHandler.Sharable
+public class MessageCorrelationHandler extends SimpleChannelInboundHandler<Message> implements Runnable, WorkingMemoryEventListener {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MessagePersister.class);
+
+    private final MessagePersister persister;
+
     private final StatefulKnowledgeSession session;
-    
-    public CorrelationChannelHandler() {
+
+    private final Thread driver = new Thread(this);
+
+    public MessageCorrelationHandler(final MessagePersister persister) {
+        this.persister = persister;
+
         final KnowledgeBuilder knowledgeBuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
         knowledgeBuilder.add(ResourceFactory.newClassPathResource("sh/lab/jcorrelat/rules/test.drl"), ResourceType.DRL);
 
@@ -64,18 +78,58 @@ public class CorrelationChannelHandler extends SimpleChannelUpstreamHandler {
 
 //        this.session.addEventListener(new DebugAgendaEventListener());
 //        this.session.addEventListener(new DebugWorkingMemoryEventListener());
+        
+        this.session.addEventListener(this);
+        
+        this.driver.start();
 
-        final MessagePersister persister = new MessagePersister();
-        this.session.addEventListener(new PersistingEventListener(persister));
+        LOG.info("Correlation engine is up and running");
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        final Message message = (Message) e.getMessage();
-        
-        LOG.debug("Correlating message: {}", message);
+    protected void channelRead0(final ChannelHandlerContext ctx, final Message message) throws Exception {
+        MessageCorrelationHandler.this.session.insert(message);
 
-        this.session.insert(message);
-        this.session.fireAllRules();
+        LOG.trace("Correlated message: {}", message);
+    }
+
+    public void run() {
+        this.session.fireUntilHalt();
+    }
+
+    public void objectInserted(ObjectInsertedEvent event) {
+        if (!(event.getObject() instanceof Message)) {
+            return;
+        }
+
+        final Message message = (Message) event.getObject();
+
+        this.persister.index(message);
+
+        LOG.trace("Inserted message to working memory: {}", message);
+    }
+
+    public void objectUpdated(ObjectUpdatedEvent event) {
+        if (!(event.getObject() instanceof Message)) {
+            return;
+        }
+
+        final Message message = (Message) event.getObject();
+
+        this.persister.index(message);
+
+        LOG.debug("Updated message from working memory: {}", message);
+    }
+
+    public void objectRetracted(ObjectRetractedEvent event) {
+        if (!(event.getOldObject() instanceof Message)) {
+            return;
+        }
+
+        final Message message = (Message) event.getOldObject();
+
+        this.persister.delete(message);
+
+        LOG.debug("Deleted message from working memory: {}", message);
     }
 }
