@@ -48,7 +48,6 @@ end
 */
 
 
-
 rule "SSH bruteforce attempt"
 no-loop
 when

@@ -48,8 +48,8 @@ public class App {
     public static final String CONF_BIND_HOST = "127.0.0.1";
     public static final int CONF_BIND_PORT = 10514;
     
-    public static final boolean CONF_ES_CLIENT = false;
-    public static final String CONF_ES_BIND = "127.0.0.1";
+    public static final boolean CONF_ES_CLIENT = true;
+    public static final String CONF_ES_BIND = "10.0.0.1";
     
     public static final Level CONF_LOG_LEVEL = Level.INFO;
 

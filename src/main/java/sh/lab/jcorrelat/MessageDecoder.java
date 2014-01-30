@@ -52,5 +52,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
         LOG.trace("Received message: {}", message);
         
         out.add(message);
+
+        in.retain();
     }
 }

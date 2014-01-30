@@ -61,6 +61,7 @@ public class MessagePersister {
     public MessagePersister() {
         this(NodeBuilder.nodeBuilder()
                 .client(App.CONF_ES_CLIENT)
+                .local(false)
                 .settings(ImmutableSettings.settingsBuilder()
                         .put("network.bind_host", App.CONF_ES_BIND)
                         .put("network.publish_host", App.CONF_ES_BIND)
